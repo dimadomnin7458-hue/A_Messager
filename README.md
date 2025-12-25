@@ -33,6 +33,7 @@
 
 *   **Backend:** [Python 3.13] + [Flask]
 *   **Database:** [SQLite] (файл `data1.db`)
+*   **Encryption:** [Cryptography]
 *   **Security:** [Werkzeug] (Password Hashing)
 *   **Frontend:** HTML, CSS, JavaScript
 
