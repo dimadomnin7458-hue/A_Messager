@@ -1,34 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import sqlite3
+import random
+import string
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_2025'
 DATABASE = 'data1.db'
-
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
     conn = get_db()
     c = conn.cursor()
-    # Таблица пользователей
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
     )''')
-    # Таблица комнат
     c.execute('''CREATE TABLE IF NOT EXISTS rooms (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
+        name TEXT NOT NULL,
+        code TEXT UNIQUE NOT NULL,
+        creator_id INTEGER
     )''')
-    # Таблица сообщений
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         room_id INTEGER NOT NULL,
@@ -40,50 +38,34 @@ def init_db():
     conn.commit()
     conn.close()
 
-
-# Инициализация БД при запуске
 init_db()
 
-
-@app.route('/')
-def index():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    rooms = conn.execute('SELECT * FROM rooms').fetchall()
-    conn.close()
-    return render_template('index.html', rooms=rooms, username=session['username'])
-
+# --- АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ ---
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = generate_password_hash(request.form['password'])
-
         try:
             conn = get_db()
             conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
             conn.commit()
             conn.close()
-            flash('Регистрация успешна!')
+            flash('Регистрация успешна! Теперь войдите.')
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            flash('Имя пользователя уже занято')
+            flash('Это имя пользователя уже занято.')
     return render_template('register.html')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
         conn = get_db()
         user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         conn.close()
-
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
             session['username'] = user['username']
@@ -91,39 +73,65 @@ def login():
         flash('Неверный логин или пароль')
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# --- ЛОГИКА КОМНАТ ---
+
+@app.route('/')
+def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html', username=session['username'])
 
 @app.route('/create_room', methods=['POST'])
 def create_room():
     room_name = request.form.get('room_name')
+    room_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
     if room_name:
-        try:
-            conn = get_db()
-            conn.execute('INSERT INTO rooms (name) VALUES (?)', (room_name,))
-            conn.commit()
-            conn.close()
-        except sqlite3.IntegrityError:
-            pass
+        conn = get_db()
+        conn.execute('INSERT INTO rooms (name, code, creator_id) VALUES (?, ?, ?)',
+                     (room_name, room_code, session['user_id']))
+        conn.commit()
+        conn.close()
+        flash(f'Комната "{room_name}" создана! Код доступа: {room_code}')
     return redirect(url_for('index'))
 
+@app.route('/join_room', methods=['POST'])
+def join_room():
+    code = request.form.get('room_code').strip().upper()
+    conn = get_db()
+    room = conn.execute('SELECT id FROM rooms WHERE code = ?', (code,)).fetchone()
+    conn.close()
+    if room:
+        return redirect(url_for('chat', room_id=room['id']))
+    flash('Комната с таким кодом не найдена')
+    return redirect(url_for('index'))
 
 @app.route('/chat/<int:room_id>')
 def chat(room_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
+    if 'user_id' not in session: return redirect(url_for('login'))
     conn = get_db()
     room = conn.execute('SELECT * FROM rooms WHERE id = ?', (room_id,)).fetchone()
     conn.close()
-    return render_template('chat.html', room=room)
+    if not room: return "Комната не найдена", 404
+    return render_template('chat.html', room=room, user_id=session['user_id'])
 
+@app.route('/delete_room/<int:room_id>')
+def delete_room(room_id):
+    conn = get_db()
+    room = conn.execute('SELECT creator_id FROM rooms WHERE id = ?', (room_id,)).fetchone()
+    if room and room['creator_id'] == session['user_id']:
+        conn.execute('DELETE FROM messages WHERE room_id = ?', (room_id,))
+        conn.execute('DELETE FROM rooms WHERE id = ?', (room_id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
-# API для получения сообщений
+# --- API ДЛЯ ЧАТА ---
+
 @app.route('/api/messages/<int:room_id>')
 def get_messages(room_id):
     conn = get_db()
@@ -134,8 +142,6 @@ def get_messages(room_id):
     conn.close()
     return jsonify([dict(m) for m in messages])
 
-
-# API для отправки сообщений
 @app.route('/api/send', methods=['POST'])
 def send_message():
     data = request.json
@@ -145,7 +151,6 @@ def send_message():
     conn.commit()
     conn.close()
     return jsonify({'status': 'ok'})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
