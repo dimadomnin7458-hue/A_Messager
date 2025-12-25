@@ -34,7 +34,7 @@
 *   **Backend:** [Python 3.13] + [Flask]
 *   **Database:** [SQLite] (файл `data1.db`)
 *   **Security:** [Werkzeug] (Password Hashing)
-*   **Frontend:** HTML5, CSS3, JavaScript (Fetch API)
+*   **Frontend:** HTML5, CSS3, JavaScript
 
 ---
 
