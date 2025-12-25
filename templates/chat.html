@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Чат: {{ room.name }}</title>
+    <style>
+        #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; width: 400px; background: #fafafa; }
+        .m { margin-bottom: 5px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <h2>Комната: {{ room.name }}</h2>
+    <div id="chat-box"></div>
+    <br>
+    <input type="text" id="msgInp" placeholder="Сообщение..." style="width: 300px;">
+    <button onclick="send()">Отправить</button>
+    <p><a href="/">Назад</a></p>
+
+    <script>
+        const roomId = {{ room.id }};
+        let lastMsgCount = 0;
+
+        async function load() {
+            const r = await fetch(`/api/messages/${roomId}`);
+            const msgs = await r.json();
+            if (msgs.length !== lastMsgCount) {
+                const box = document.getElementById('chat-box');
+                box.innerHTML = msgs.map(m => `<div class="m"><b>${m.username}</b> [${m.time}]: ${m.text}</div>`).join('');
+                box.scrollTop = box.scrollHeight;
+                lastMsgCount = msgs.length;
+            }
+        }
+
+        async function send() {
+            const inp = document.getElementById('msgInp');
+            if (!inp.value.trim()) return;
+            await fetch('/api/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ room_id: roomId, text: inp.value })
+            });
+            inp.value = '';
+            load();
+        }
+
+        setInterval(load, 2000); // Обновление каждые 2 секунды
+        load();
+    </script>
+</body>
+</html>
