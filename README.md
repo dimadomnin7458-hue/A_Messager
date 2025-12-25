@@ -48,10 +48,10 @@
 git clone github.com
 cd A_Messager
 
-2. Установка зависимостей
-bash
-pip install flask werkzeug
-
+### 2. Установка зависимостей
+Для работы приложения необходимы Flask и библиотека для шифрования данных:
+```bash
+pip install flask werkzeug cryptography
 3. Запуск
 bash
 python app.py
