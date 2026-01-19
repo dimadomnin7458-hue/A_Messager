@@ -42,6 +42,17 @@
 | **Безопасность** | Werkzeug Security |
 
 ---
+## 📸 Галерея
+1) Страница авторизации
+<img width="1891" height="936" alt="image" src="https://github.com/user-attachments/assets/56186cdf-ff3c-453f-9e6b-0b5c0b3ee401" />
+2) Страница регистрации
+<img width="1877" height="935" alt="image" src="https://github.com/user-attachments/assets/335d28e1-fa7e-4a95-bd52-1565042a0696" />
+3) Основная страница месседжера
+<img width="1908" height="949" alt="image" src="https://github.com/user-attachments/assets/8954fc8c-fafb-4910-8213-98d47d3a4650" />
+
+
+👀 Посмотреть скриншоты интерфейса
+---
 
 ## 🚀 Быстрый старт
 
@@ -58,7 +69,3 @@ pip install flask cryptography werkzeug
 ### 3. Запуск
 bash
 python app.py
-
-## 📸 Галерея
-
-👀 Посмотреть скриншоты интерфейса
