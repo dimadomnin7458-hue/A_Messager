@@ -50,6 +50,10 @@
 <img width="1877" height="935" alt="image" src="https://github.com/user-attachments/assets/335d28e1-fa7e-4a95-bd52-1565042a0696" />
 3) Основная страница месседжера
 <img width="1908" height="949" alt="image" src="https://github.com/user-attachments/assets/8954fc8c-fafb-4910-8213-98d47d3a4650" />
+3) Страница чата с другом, защищенная шифрованием
+<img width="1903" height="951" alt="image" src="https://github.com/user-attachments/assets/6a22e826-77f8-4204-a8e9-2ea755364bf3" />
+4) Темная тема чата
+<img width="1903" height="943" alt="image" src="https://github.com/user-attachments/assets/3fe158b6-5366-4754-9dbd-3e466f6c96ea" />
 
 ---
 
